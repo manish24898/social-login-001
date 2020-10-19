@@ -1,5 +1,1 @@
-`use strict`;
-
-module.exports = {
-    userCtrl: require("./v1")
-}
+module.exports = require("./v1")
