@@ -1,6 +1,7 @@
 `use strict`;
 const {RESPONSE_CODE} = require("../../../../utils/constants")
-const User = require("../../../../models")["Users"]
+const User = require("../../../../models")["Users"];
+const {token} = require("../../../../utils/common");
 
 //User auth routes
 module.exports = (app, passport) => {
@@ -11,7 +12,6 @@ module.exports = (app, passport) => {
     //\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
     //\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
     app.route("/v1/api/google_login").get(async (req, res) => {
-        console.log("Client id", process.env.G_CLIENT_ID)
         return res.redirect('/auth/google');
     });
 
@@ -39,9 +39,19 @@ module.exports = (app, passport) => {
     //\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
     app.get(
         "/auth/google/callback",
-        passport.authenticate("google", {failureRedirect: "/v1/api/invalid_access?code=403"}), (req, res) => {
-            let user = req.session.passport.user;
+        passport.authenticate("google", {failureRedirect: "/v1/api/invalid_access?code=403"}), async (req, res) => {
+            let user = req.session.passport.user, _u = null;
+            _u = await User.findOne({
+                where: {email: user.email},
+            });
+
+            if (!_u) {
+                _u = new User({...user});
+            }
+            _u.dataValues._accessToken = await token(_u);
+            _u.save();
+
             res.status(RESPONSE_CODE.SUCCESS);
-            return res.send({user: user});
+            return res.send(_u);
         });
 };

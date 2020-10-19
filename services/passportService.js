@@ -4,7 +4,6 @@ const out = {};
 module.exports = out;
 const GoogleStrategy = require("passport-google-oauth2");
 const {GOOGLE} = require("../config/socialLogin");
-const {token} = require("../utils/common");
 
 /**
  * Google strategy passport
@@ -17,11 +16,10 @@ out.googleStrategy = async (passport) => {
         clientSecret: GOOGLE.clientSecret,
         callbackURL: GOOGLE.callbackUrl
     }, async (accessToken, refreshToken, profile, next) => {
-        let email = profile.email;
-        let data = {email};
-        let _accessToken = await token(data);
-        data._accessToken = _accessToken;
-
+        let data = {};
+        data.name = profile.displayName;
+        data.email = profile.email;
+        data.gId = profile.sub;
         process.nextTick(async () => {
             return next(null, data)
         })
